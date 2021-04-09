@@ -24,7 +24,7 @@ def read_data(file_path: str,
                  " and last column as classification label.")
 
   # `guid_index`: should be 2 for SNLI, 0 for MNLI and None for any random tsv file.
-  if task_name == "MNLI":
+  if task_name == "MNLI" or task_name == "GoEmotions" or task_name == "PathosLogos":
     return read_glue_tsv(file_path,
                         guid_index=0,
                         guid_as_int=guid_as_int)
@@ -69,7 +69,7 @@ def copy_dev_test(task_name: str,
   if task_name == "MNLI":
     dev_filename = "dev_matched.tsv"
     test_filename = "dev_mismatched.tsv"
-  elif task_name in ["SNLI", "QNLI", "WINOGRANDE"]:
+  elif task_name in ["SNLI", "QNLI", "WINOGRANDE", "GoEmotions", "PathosLogos"]:
     dev_filename = f"dev{extension}"
     test_filename = f"test{extension}"
   else:
