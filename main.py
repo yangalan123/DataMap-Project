@@ -95,7 +95,9 @@ def load_data(tokenizer: AutoTokenizer, args):
         # test_ids = all_ids[train_num + valid_num: ]
         train_ids = list(range(len(user_input_train)))
         dev_ids = list(range(len(user_input_dev)))
+        dev_ids = [x + len(user_input_train) for x in dev_ids]
         test_ids = list(range(len(user_input_test)))
+        test_ids = [x + len(user_input_train) + len(user_input_dev) for x in test_ids]
         train_data = create_batches(all_user_inputs, all_user_labels, train_ids)
         dev_data = create_batches(all_user_inputs, all_user_labels, dev_ids)
         test_data = create_batches(all_user_inputs, all_user_labels, test_ids)
