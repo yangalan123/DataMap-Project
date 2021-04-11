@@ -1,7 +1,8 @@
 import json
 import os
 import pickle
-log_path = "pathsLogos/running_2021-04-05-17_03_30"
+# log_path = "pathsLogos/running_2021-04-05-17_03_30"
+log_path = "pathos_premise"
 label_dict = pickle.load(open(os.path.join(log_path, "label_dict.pkl"), "rb"))
 output_path = "training_dynamics"
 os.makedirs(output_path, exist_ok=True)

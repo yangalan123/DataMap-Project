@@ -24,7 +24,7 @@ def read_data(file_path: str,
                  " and last column as classification label.")
 
   # `guid_index`: should be 2 for SNLI, 0 for MNLI and None for any random tsv file.
-  if task_name == "MNLI" or task_name == "GoEmotions" or task_name == "PathosLogos":
+  if task_name == "MNLI":
     return read_glue_tsv(file_path,
                         guid_index=0,
                         guid_as_int=guid_as_int)
@@ -39,7 +39,11 @@ def read_data(file_path: str,
     return read_glue_tsv(file_path,
                         guid_index=0)
   else:
-    raise NotImplementedError(f"Reader for {task_name} not implemented.")
+    logger.warning(f"Unseen task name, using default choice as MNLI/GoEmotions/PathosLogos in read_data: "
+                   f"guid_index=0, guid_as_int={guid_as_int}")
+    return read_glue_tsv(file_path,
+                         guid_index=0,
+                         guid_as_int=guid_as_int)
 
 
 def convert_tsv_entries_to_dataframe(tsv_dict: Dict, header: str) -> pd.DataFrame:
@@ -73,7 +77,10 @@ def copy_dev_test(task_name: str,
     dev_filename = f"dev{extension}"
     test_filename = f"test{extension}"
   else:
-    raise NotImplementedError(f"Logic for {task_name} not implemented.")
+    logger.warning(f"Unseen task, using default setting in copy_dev_test: dev=dev{extension}, test=test{extension}")
+    dev_filename = f"dev{extension}"
+    test_filename = f"test{extension}"
+    # raise NotImplementedError(f"Logic for {task_name} not implemented.")
 
   dev_path = os.path.join(from_dir, dev_filename)
   if os.path.exists(dev_path):

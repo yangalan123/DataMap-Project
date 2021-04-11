@@ -193,7 +193,7 @@ def write_filtered_data(args, train_dy_metrics):
                                                ascending=is_ascending)
 
   original_train_file = os.path.join(os.path.join(args.data_dir, args.task_name), f"train.tsv")
-  train_numeric, header = read_data(original_train_file, task_name=args.task_name, guid_as_int=args.task_name not in ["GoEmotions", "PathosLogos"])
+  train_numeric, header = read_data(original_train_file, task_name=args.task_name, guid_as_int=args.task_name in ["SNLI", "MNLI", "QNLI", "WINOGRANDE"])
 
   for fraction in [0.01, 0.05, 0.10, 0.1667, 0.25, 0.3319, 0.50, 0.75]:
     outdir = os.path.join(args.filtering_output_dir,
@@ -359,7 +359,7 @@ if __name__ == "__main__":
   parser.add_argument("--task_name",
                       "-t",
                       default="WINOGRANDE",
-                      choices=("SNLI", "MNLI", "QNLI", "WINOGRANDE", "GoEmotions", "PathosLogos"),
+                      # choices=("SNLI", "MNLI", "QNLI", "WINOGRANDE", "GoEmotions", "PathosLogos"),
                       help="Which task are we plotting or filtering for.")
   parser.add_argument('--metric',
                       choices=('threshold_closeness',

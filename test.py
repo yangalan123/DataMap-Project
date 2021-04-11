@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer
 from model import BertClassifier
-from config import QuestionArgs
+from config import Args
 import torch
 import random
 import pickle
@@ -115,7 +115,7 @@ def batch_iteration(data, model, criterion, optimizer, mode, record=False):
     return loss / count, acc / count, res_dict
 
 
-args = QuestionArgs()
+args = Args()
 random.seed(args.SEED)
 torch.manual_seed(args.SEED)
 torch.cuda.manual_seed(args.SEED)
