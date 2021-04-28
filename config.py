@@ -9,7 +9,7 @@ class Args:
         self.EPOCHS = 20
         # deprecated, no longer needed
         # self.MAX_LEN = 128
-        self.task_name = "TestTask"
+        self.task_name = "pathos_logos_all"
         #### do not change datamap_dir! it should be equal to task_name in general
         self.dir_processed_data_for_datamap = self.task_name
         self.output_train_file = os.path.join(self.dir_processed_data_for_datamap, "train.tsv")

@@ -1,5 +1,5 @@
 import os
-data_dir = "pathos_premise"
+data_dir = "pathsLogos/pathos_premise"
 thres = ["0.01", "0.05", "0.10", "0.17", "0.25", "0.33", "0.50", "0.75"]
 metrics = ["confidence", "variability"]
 output = ["hard_to_learn.txt", "ambiguous.txt"]

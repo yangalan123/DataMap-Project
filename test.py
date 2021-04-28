@@ -12,9 +12,14 @@ import os
 from datetime import datetime
 import numpy as np
 import uuid
+from sklearn.metrics import classification_report, confusion_matrix
+import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
-log_path = "pathsLogos/running_2021-04-09-02_19_58"
+# log_path = "pathsLogos/vanilla_pathos_logos"
+log_path = "pathos_logos_all"
 user_label_dict = pickle.load(open(os.path.join(log_path, "label_dict.pkl"), "rb"))
 def load_data(tokenizer: AutoTokenizer, args):
     def get_data(filename, output_dir="processed_data"):
@@ -66,14 +71,24 @@ def load_data(tokenizer: AutoTokenizer, args):
             buf_input.clear()
             buf_ids.clear()
         return ret
-    user_input_test, user_labels_test = get_data("PathosLogos/all_argument_aug.tsv")
-    all_user_inputs = user_input_test
-    all_user_labels = user_labels_test
-    for i in range(len(all_user_labels)):
-        all_user_labels[i] = user_label_dict[random.sample(list(user_label_dict.keys()), 1)[0]]
+    use_origin_dataset = True
+    if use_origin_dataset:
+        # user_label_dict = pickle.load(open(os.path.join(args.dir_processed_data_for_datamap, "label_dict.pkl"), "rb"))
+        train_data, dev_data, test_data = pickle.load(
+            open(os.path.join(log_path, f"data_split_bs{args.BATCH_SIZE}.pkl"), "rb"))
+        all_user_inputs, all_user_labels = pickle.load(
+            open(os.path.join(log_path, "all_data.pkl"), "rb"))
+    else:
+        # print("File Loading Error, try to re-create dataset....")
+        # use extra dataset
+        user_input_test, user_labels_test = get_data("PathosLogos/all_argument_aug.tsv")
+        all_user_inputs = user_input_test
+        all_user_labels = user_labels_test
+        for i in range(len(all_user_labels)):
+            all_user_labels[i] = user_label_dict[random.sample(list(user_label_dict.keys()), 1)[0]]
 
-    test_ids = list(range(len(user_input_test)))
-    test_data = create_batches(all_user_inputs, all_user_labels, test_ids)
+        test_ids = list(range(len(user_input_test)))
+        test_data = create_batches(all_user_inputs, all_user_labels, test_ids)
 
     print(f"test: {args.BATCH_SIZE * (len(test_data) - 1) + len(test_data[-1]['id'])}")
     return test_data, all_user_inputs, all_user_labels
@@ -84,6 +99,7 @@ def batch_iteration(data, model, criterion, optimizer, mode, record=False):
     loss = 0
     acc = 0
     count = 0
+    all_labels, all_preds = [], []
     for _batch in data:
         # print(type(_batch["batch_inputs"]))
         inputs = _batch["batch_inputs"]
@@ -101,6 +117,8 @@ def batch_iteration(data, model, criterion, optimizer, mode, record=False):
         prediction = torch.argmax(logits, dim=-1)
         acc += (prediction == labels).sum().cpu().item()
         count += len(labels)
+        all_labels.extend(_batch["batch_labels"].tolist())
+        all_preds.extend(prediction.cpu().tolist())
         if mode == "train":
             _loss.backward()
             optimizer.step()
@@ -108,11 +126,11 @@ def batch_iteration(data, model, criterion, optimizer, mode, record=False):
         if record:
             for _id, _label, _prediction, _output in zip(ids, labels.cpu(), prediction.cpu(), logits.cpu()):
                 res_dict[_id] = {
-                    # "label": _label.item(),
+                    "label": _label.item(),
                     "prediction": _prediction.item(),
                     "logits": _output.tolist()
                 }
-    return loss / count, acc / count, res_dict
+    return loss / count, acc / count, res_dict, all_labels, all_preds
 
 
 args = Args()
@@ -185,14 +203,30 @@ for no_fold in range(K_fold):
 
         # json.dump(train_res_dict, open(os.path.join(log_path, "train_res_dict_epoch{}.json".format(_epoch)), "w", encoding='utf-8'), indent=4)
     model.from_pretrained(model_path)
+    label_names = [id2label[_i].strip() for _i in range(len(id2label))]
     with torch.no_grad():
         # test_loss, test_acc, _ = batch_iteration(_k_fold_test_data, model, criterion, optimizer, "eval", False)
-        test_loss, test_acc, res_dict = batch_iteration(test_data, model, criterion, optimizer, "eval", True)
+        test_loss, test_acc, res_dict, all_labels, all_preds = batch_iteration(test_data, model, criterion, optimizer, "eval", True)
         # logger.info("Training finished, test_acc:{}, test_loss:{}".format(test_acc, test_loss))
-        with open("pred_res.tsv", "w", encoding='utf-8') as f_out:
+        with open(os.path.join(log_path, "pred_res.tsv"), "w", encoding='utf-8') as f_out:
+            f_out.write("text\tprediction\tlabel\n")
             for _id in res_dict:
                 _text = all_user_inputs[key_to_id[_id]][0]
-                f_out.write(f"{_text}\t{id2label[res_dict[_id]['prediction']]}")
+                f_out.write(f"{_text}\t{id2label[res_dict[_id]['prediction']].strip()}\t{id2label[res_dict[_id]['label']].strip()}\n")
+        clf_rpt = classification_report(all_labels, all_preds, target_names=label_names)
+        print(clf_rpt)
+        f = open(os.path.join(log_path, "pred_clf_rpt.txt"), "w", encoding='utf-8')
+        f.write(str(clf_rpt))
+        # conf_mat = confusion_matrix(all_labels, all_preds)
+        conf_mat = confusion_matrix([1-x for x in all_labels], [1-x for x in all_preds])
+        # df_cm = pd.DataFrame(conf_mat, index=label_names, columns=label_names)
+        df_cm = pd.DataFrame(conf_mat, index=list(reversed(label_names)), columns=list(reversed(label_names)))
+        sn.set(font_scale=1.4)
+        sn.heatmap(df_cm, annot=True)
+        plt.savefig(os.path.join(log_path, "confusion_matrix.pdf"))
+
+        plt.show()
+        
 
 
         # all_loss, all_acc, res_dict = batch_iteration(_k_fold_train_data + _k_fold_valid_data + _k_fold_test_data, model, criterion, optimizer, "eval", record=True)

@@ -1,7 +1,11 @@
 import json
 import pickle
 import numpy as np
-label_dict = pickle.load(open("label_dict.pkl", "rb"))
+from config import Args
+import os
+args = Args()
+data_dir = args.dir_processed_data_for_datamap
+label_dict = pickle.load(open(os.path.join(data_dir, "label_dict.pkl"), "rb"))
 # inv_map = dict()
 # for k, v in label_dict.items():
 #     try:
@@ -37,11 +41,14 @@ for i in range(20):
 new_id2label = dict()
 bufs = []
 # dataset_name = "GoEmotions"
-dataset_name = "PathosLogos"
-# metric = "variability"
-metric = "confidence"
+# dataset_name = "PathosLogos"
+dataset_name = args.task_name
+metric = "variability"
+datamap_type = "ambiguous"
+# metric = "confidence"
+# datamap_type = "hard_to_learn"
 with open(f"cartography/filtered/cartography_{metric}_0.01/{dataset_name}/train.tsv", "r", encoding='utf-8') as f_in:
-    with open(f"cartography/filtered/cartography_{metric}_0.01/{dataset_name}/train_simp.tsv", "w", encoding='utf-8') as f_out:
+    with open(f"cartography/filtered/cartography_{metric}_0.01/{dataset_name}/{dataset_name}_{datamap_type}.tsv", "w", encoding='utf-8') as f_out:
         for i, line in enumerate(f_in):
             if i == 0:
                 content = line.strip().split("\t")
@@ -56,9 +63,9 @@ with open(f"cartography/filtered/cartography_{metric}_0.01/{dataset_name}/train.
                 new_id2label[uid2label[uuid]] = content[2]
             else:
                 assert content[2] == new_id2label[uid2label[uuid]]
-        # just for debugging
-        if 1 not in new_id2label:
-            new_id2label[1] = "logos"
+        # # just for debugging
+        # if 1 not in new_id2label:
+        #     new_id2label[1] = "logos"
         id_set = set(new_id2label.keys())
         value_set = set(new_id2label.values())
         assert len(id_set) == len(value_set)
