@@ -6,6 +6,6 @@ matplotlib==3.2.1
 numpy==1.22.0
 jsonnet==0.15.0
 tensorboardx==2.0
-torch==1.13.1
+torch>=2.2.0
 spacy==2.1.9
 scikit-learn
